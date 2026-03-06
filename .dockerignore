@@ -1,6 +1,7 @@
 .git
 .github
 .idea
+.gnoduty-state.json
 .tenderduty-state.json
 docs
-tenderduty
+gnoduty

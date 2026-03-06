@@ -1,45 +1,35 @@
-# docker-compose example for tenderduty, copy this file to docker-compose.yml and edit to suit.
+# docker-compose example for GnoDuty, copy this file to docker-compose.yml and edit to suit.
+#
+# Quick start:
+#   cp example-docker-compose.yml docker-compose.yml
+#   cp example-config.yml config.yml
+#   # Edit config.yml with your validator address and RPC endpoint
+#   docker-compose up -d
+#   docker-compose logs -f --tail 20
+#
+# The dashboard will be available at http://YOUR_SERVER_IP:8889
+#
+# For HTTPS access, set up a reverse proxy (Caddy, Nginx, or Apache)
+# pointing to localhost:8889. This is done outside of Docker and is
+# independent of this docker-compose configuration.
+
 version: '3.2'
-
-networks:
-  monitor-net:
-    driver: bridge
-
 volumes:
   home:
-  caddy_data: {}
-
 services:
-  tenderduty:
+  gnoduty:
     build: .
     command: ""
-    expose:
-      - 8888   # Dashboard
-      - 28686  # Prometheus exporter
+    ports:
+      - "8889:8889"   # Dashboard
+      - "28687:28687"  # Prometheus exporter
     volumes:
-      - home:/var/lib/tenderduty
-      - ./config.yml:/var/lib/tenderduty/config.yml
-      - ./chains.d:/var/lib/tenderduty/chains.d/
+      - home:/var/lib/gnoduty
+      - ./config.yml:/var/lib/gnoduty/config.yml
+      - ./chains.d:/var/lib/gnoduty/chains.d/
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "10"
     restart: unless-stopped
-    networks:
-      - monitor-net
-
-  caddy:
-    image: caddy:2.3.0
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-      - "8888:8888"
-      - "28686:28686"
-    volumes:
-      - ./caddy:/etc/caddy
-      - caddy_data:/data
-    restart: unless-stopped
-    networks:
-      - monitor-net

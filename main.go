@@ -9,7 +9,7 @@ import (
 	"os"
 	"syscall"
 
-	td2 "github.com/blockpane/tenderduty/v2/td2"
+	td2 "github.com/aviaone/gnoduty/v2/core"
 )
 
 //go:embed example-config.yml
@@ -21,7 +21,7 @@ func main() {
 	flag.StringVar(&configFile, "f", "config.yml", "configuration file to use, can also be set with the ENV var 'CONFIG'")
 	flag.StringVar(&encryptedFile, "encrypted-config", "config.yml.asc", "encrypted config file, only valid with -encrypt or -decrypt flag")
 	flag.StringVar(&password, "password", "", "password to use for encrypting/decrypting the config, if unset will prompt, also can use ENV var 'PASSWORD'")
-	flag.StringVar(&stateFile, "state", ".tenderduty-state.json", "file for storing state between restarts")
+	flag.StringVar(&stateFile, "state", ".gnoduty-state.json", "file for storing state between restarts")
 	flag.StringVar(&chainConfigDirectory, "cc", "chains.d", "directory containing additional chain specific configurations")
 	flag.BoolVar(&dumpConfig, "example-config", false, "print the an example config.yml and exit")
 	flag.BoolVar(&encryptConfig, "encrypt", false, "encrypt the file specified by -f to -encrypted-config")

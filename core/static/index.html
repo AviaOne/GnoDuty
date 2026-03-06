@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: HEAD                                                                 -->
+    <!-- GnoDuty - Gno.land Validator Monitor                                              -->
+    <!-- Hard fork of Tenderduty (https://github.com/blockpane/tenderduty)                 -->
+    <!-- By AviaOne.com (https://github.com/AviaOne/gnoduty)      				           -->	
+    <!-- ================================================================================= -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GnoDuty | Gno.land Validator Monitor</title>
+
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="GnoDuty, Real-time Gno.land (TM2) validator monitoring dashboard. Track block signing, uptime, and node health.">
+    <meta name="theme-color" content="#ff5f00">
+
+    <!-- CSS Frameworks -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- UIKit CSS - Required by Tenderduty JS (grid.js, status.js) -->
+    <link rel="stylesheet" href="css/uikit.min.css" />
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.png">
+
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:title" content="GnoDuty | Gno.land Validator Monitor">
+    <meta property="og:description" content="Real-time Gno.land validator monitoring. Track block signing, uptime, and node health.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="GnoDuty | Gno.land Validator Monitor">
+    <meta name="twitter:description" content="Real-time Gno.land validator monitoring dashboard.">
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "GnoDuty",
+        "url": "https://github.com/AviaOne/gnoduty",
+        "applicationCategory": "Blockchain Monitoring",
+        "operatingSystem": "Linux",
+        "description": "Real-time Gno.land (TM2) validator monitoring dashboard. Hard fork of Tenderduty."
+    }
+    </script>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: HEAD                                                                   -->
+    <!-- ================================================================================= -->
+
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: CUSTOM STYLES                                                        -->
+    <!-- ================================================================================= -->
+    <style>
+        /* ========================================
+           CSS Variables
+           ======================================== */
+        :root {
+            --gd-primary: #FF5F00;
+            --gd-primary-hover: #e65600;
+            --gd-bg: #1e1e2d;
+            --gd-card-bg: #2d2d3a;
+            --gd-border: #404050;
+            --gd-text: #c0c8d1;
+            --gd-text-muted: rgba(255,255,255,0.5);
+        }
+
+        /* ========================================
+           Global Styles
+           ======================================== */
+        body.layout-top-nav,
+        .content-wrapper,
+        .main-footer {
+            background-color: var(--gd-bg) !important;
+            color: var(--gd-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        a { color: var(--gd-primary); text-decoration: none; }
+        a:hover { color: var(--gd-primary-hover); }
+
+        /* ========================================
+           Page Title
+           ======================================== */
+        .gd-page-title {
+            font-size: 28px;
+            font-weight: 300;
+            color: #e0e0e0;
+            margin: 0;
+        }
+        .gd-page-title small {
+            font-size: 14px;
+            color: var(--gd-text-muted);
+            font-weight: 400;
+        }
+        @media (max-width: 576px) {
+            .gd-page-title { font-size: 22px; }
+            .gd-page-title small { font-size: 12px; display: block; margin-top: 4px; }
+        }
+
+        /* ========================================
+           Card Overrides (AdminLTE)
+           ======================================== */
+        .card {
+            background-color: var(--gd-card-bg);
+            border-color: var(--gd-border);
+        }
+        .card.card-primary.card-outline {
+            border-top-color: var(--gd-primary);
+        }
+        .card-header {
+            background-color: transparent;
+            border-bottom-color: var(--gd-border);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        /* ========================================
+           Log Panel
+           ======================================== */
+        #logs {
+            background: #080808 !important;
+            height: 300px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* ========================================
+           Canvas / Table Responsive
+           ======================================== */
+        #canvasDiv, #tableDiv {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        @media (max-width: 768px) {
+            .uk-table th, .uk-table td {
+                font-size: 12px;
+                padding: 4px 6px;
+            }
+        }
+
+        /* ========================================
+           Footer
+           ======================================== */
+        .main-footer {
+            border-top: 1px solid var(--gd-border) !important;
+        }
+        .main-footer p { margin: 0; }
+        .gd-footer-brand strong { color: var(--gd-primary); }
+        .gd-footer-credit {
+            font-size: 12px;
+            color: var(--gd-text-muted);
+        }
+        .gd-footer-credit a { color: #6fa8dc; }
+
+        /* ========================================
+           Light/Dark Mode Toggle
+           ======================================== */
+        .gd-mode-toggle {
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s;
+        }
+        .gd-mode-toggle:hover { color: var(--gd-primary); }
+
+        /* ========================================
+           Scroll to Top Button
+           ======================================== */
+        #gd-scroll-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background-color: var(--gd-primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+            z-index: 1050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #gd-scroll-top:hover { background-color: var(--gd-primary-hover); }
+        #gd-scroll-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+    </style>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: CUSTOM STYLES                                                          -->
+    <!-- ================================================================================= -->
+</head>
+
+<!-- onload attribute required by Tenderduty JS (grid.js, status.js) -->
+<body class="layout-top-nav dark-mode" onload="loadState(); legend()">
+<div class="wrapper">
+    <div class="content-wrapper">
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: PAGE TITLE                                                           -->
+    <!-- ================================================================================= -->
+                        <h1 class="gd-page-title mt-4 mb-4 text-center">
+                            GnoDuty <small>Gno.land Validator Monitor</small>
+                        </h1>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: PAGE TITLE                                                             -->
+    <!-- ================================================================================= -->
+
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: REAL-TIME BLOCKS                                                     -->
+    <!-- ================================================================================= -->
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <h2 class="card-title text-white">Real-Time Blocks</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="uk-width-expand uk-overflow-auto uk-background-secondary" id="canvasDiv">
+                                    <div style="width: 4835px;" class="uk-padding-remove-horizontal">
+                                        <canvas id="canvas" height="40" width="4735"></canvas>
+                                    </div>
+                                    <div id="legendContainer" class="uk-nav-center uk-background-secondary uk-padding-remove">
+                                        <canvas id="legend" height="32" width="700"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: REAL-TIME BLOCKS                                                       -->
+    <!-- ================================================================================= -->
+
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: NODE TELEMETRY                                                       -->
+    <!-- ================================================================================= -->
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <h2 class="card-title text-white">Node Telemetry</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="uk-padding-small uk-text-small uk-background-secondary uk-overflow-auto" id="tableDiv">
+                                    <table class="uk-table uk-table-small uk-table-justify uk-padding-remove">
+                                        <thead>
+                                            <tr>
+                                                <th></th>
+                                                <th>Chain</th>
+                                                <th>Height</th>
+                                                <th>Moniker</th>
+                                                <th style="text-align: center">Bonded</th>
+                                                <th class="uk-text-center">Uptime</th>
+                                                <th class="uk-text-center">RPC Nodes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="statusTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: NODE TELEMETRY                                                         -->
+    <!-- ================================================================================= -->
+
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: LIVE LOGS                                                            -->
+    <!-- ================================================================================= -->
+                        <div class="card card-primary card-outline">
+                            <div class="card-header">
+                                <h2 class="card-title text-white">Live Logs</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="uk-padding-large uk-padding-remove-top" id="logContainer">
+                                    <pre id="logs" class="uk-panel-scrollable uk-resize-vertical"></pre>
+                                </div>
+                            </div>
+                        </div>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: LIVE LOGS                                                              -->
+    <!-- ================================================================================= -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- ================================================================================= -->
+    <!-- START BLOCK: FOOTER                                                               -->
+    <!-- ================================================================================= -->
+<footer class="main-footer d-print-none" id="gnoduty-footer">
+    <div class="container-fluid">
+        <div class="row text-center align-items-center">
+            
+            <div class="col-12 mb-1">
+                <p class="gd-footer-brand mb-0">
+                    <a href="https://github.com/AviaOne/GnoDuty" target="_blank"><strong>GnoDuty</strong></a> 
+                    by <a href="https://aviaone.com/" target="_blank">AviaOne.com</a>
+                </p>
+            </div>
+
+            <div class="col-12">
+				<p class="gd-footer-credit mb-1" style="font-size: 12px;">
+					Copyright &copy; <span id="copyright-year">2026</span>
+				</p>
+            </div>
+
+            <div class="col-12 mb-2">
+                <p class="gd-footer-credit mb-0" style="font-size: 12px;">
+                    Hard Fork of 
+                    <span class="d-inline-block">
+                        <i class="fas fa-sun" aria-hidden="true"></i> 
+                        <span style="color: #d015ff;">[</span> 
+                        <a href="https://github.com/blockpane/tenderduty" rel="nofollow" target="_blank" style="color: #8ebf42; text-decoration: none;"> Tenderduty </a> 
+                        <span style="color: #d015ff;">]</span> 
+                            <i class="fab fa-github" aria-hidden="true"></i>
+                        </a>
+                    </span>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</footer>
+    <!-- ================================================================================= -->
+    <!-- END BLOCK: FOOTER                                                                 -->
+    <!-- ================================================================================= -->
+
+    </div>
+</div>
+
+<!-- Scroll to Top Button -->
+<button id="gd-scroll-top" title="Back to top" aria-label="Scroll to top">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M18 11l-6 -6" /><path d="M6 11l6 -6" /></svg>
+</button>
+
+<!-- ================================================================================= -->
+<!-- START BLOCK: JAVASCRIPT                                                           -->
+<!-- ================================================================================= -->
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Tenderduty JS - Required for dashboard functionality -->
+<script src="js/uikit.min.js"></script>
+<script src="js/uikit-icons.min.js"></script>
+<script src="js/lodash.min.js"></script>
+<script type="application/javascript" src="grid.js"></script>
+<script type="application/javascript" src="status.js"></script>
+
+<!-- Scroll to Top Logic -->
+<script>
+(function() {
+    var btn = document.getElementById('gd-scroll-top');
+    if (!btn) return;
+    window.addEventListener('scroll', function() {
+        btn.classList.toggle('show', window.scrollY > 200);
+    });
+    btn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+})();
+</script>
+<!-- Display and update date  -->
+<script src="automatic-date.js"></script>
+<!-- ================================================================================= -->
+<!-- END BLOCK: JAVASCRIPT                                                             -->
+<!-- ================================================================================= -->
+</body>
+</html>

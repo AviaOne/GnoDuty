@@ -1,9 +1,9 @@
 config.yml
 config.yml.asc
 docker-compose.yml
-.tenderduty-state.json
-tenderduty-*
-tenderduty
+.gnoduty-state.json
+gnoduty-*
+gnoduty
 local*
 
 .idea
