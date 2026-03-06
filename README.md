@@ -29,28 +29,46 @@ GnoDuty solves this by:
 
 ![GnoDuty Dashboard](readme-screenshot.jpg)
 
-## Quick Start
+---
+
+## Installation — Linux (Ubuntu/Debian)
 
 ### Requirements
 
-- Go 1.21 or later, tested with 1.26
+- Go 1.21 or later (tested with 1.26)
 - Linux (tested on Ubuntu 24.04)
+- Ports 8889 (dashboard) and 28687 (Prometheus) must be open
 
-### Install from source
+If you use UFW, open the required ports before starting:
 ```bash
-git clone https://github.com/AviaOne/gnoduty
-cd gnoduty
-cp example-config.yml config.yml
-# Edit config.yml set your validator address and RPC endpoint
-go install
-~/go/bin/gnoduty
+sudo ufw allow 8889/tcp comment "GnoDuty Dashboard"
+sudo ufw allow 28687/tcp comment "GnoDuty Prometheus"
 ```
 
-The dashboard will be available at `http://localhost:8889`
+### Step 1 — Create a dedicated system user
 
-### Configuration
+A dedicated system user improves security by isolating GnoDuty from other services. Run this from your regular user account (with sudo access):
+```bash
+sudo useradd -r -s /bin/false -m -d /var/lib/gnoduty gnoduty
+```
 
-Edit `config.yml` before starting. The most important settings:
+### Step 2 — Install GnoDuty
+```bash
+sudo -u gnoduty bash -c 'cd ~ && git clone https://github.com/AviaOne/gnoduty && cd gnoduty && go install'
+```
+
+### Step 3 — Configure
+```bash
+sudo -u gnoduty mkdir -p /var/lib/gnoduty/.gnoduty
+sudo -u gnoduty cp /var/lib/gnoduty/gnoduty/example-config.yml /var/lib/gnoduty/.gnoduty/config.yml
+```
+
+Edit the configuration file:
+```bash
+sudo -u gnoduty nano /var/lib/gnoduty/.gnoduty/config.yml
+```
+
+The most important settings to change:
 ```yaml
 chains:
   # Display name shown on the dashboard (can be anything)
@@ -69,16 +87,35 @@ To verify your chain_id:
 curl -s https://rpc.test11.testnets.gno.land/status | python3 -c "import json,sys; print(json.load(sys.stdin)['result']['node_info']['network'])"
 ```
 
-See `example-config.yml` for a complete configuration reference with all alert options.
+See `example-config.yml` for a complete configuration reference with all options.
 
-### Run as a systemd service
-```bash
-sudo useradd -r -s /bin/false -m -d /home/gnoduty gnoduty
-sudo -u gnoduty bash -c 'cd ~ && git clone https://github.com/AviaOne/gnoduty && cd gnoduty && go install'
-sudo -u gnoduty mkdir -p /home/gnoduty/.gnoduty
-sudo -u gnoduty cp /home/gnoduty/gnoduty/example-config.yml /home/gnoduty/.gnoduty/config.yml
-# Edit /home/gnoduty/.gnoduty/config.yml
+### Step 4 — Configure alerts
+
+GnoDuty supports alerts via Telegram, Discord, Slack, and PagerDuty when your validator misses blocks, goes offline, or gets jailed.
+
+**Important:** Both global AND per-chain alert settings must be enabled. If either is disabled, no alerts will be sent.
+
+**Global settings** (top of `config.yml`):
+```yaml
+telegram:
+  enabled: yes
+  api_key: 'YOUR_BOT_API_KEY'
+  channel: "-YOUR_CHANNEL_ID"
 ```
+
+**Per-chain settings** (inside each chain's `alerts:` section):
+```yaml
+    alerts:
+      # ... alert thresholds ...
+      telegram:
+        enabled: yes
+        api_key: ""  # leave empty to use global settings
+        channel: ""  # leave empty to use global settings
+```
+
+If the per-chain section is missing or `enabled: no`, alerts will NOT be sent for that chain even if the global setting is enabled.
+
+### Step 5 — Create the systemd service
 
 Create `/etc/systemd/system/gnoduty.service`:
 ```ini
@@ -91,8 +128,8 @@ Wants=network-online.target
 User=gnoduty
 Group=gnoduty
 Type=simple
-WorkingDirectory=/home/gnoduty/.gnoduty
-ExecStart=/home/gnoduty/go/bin/gnoduty -f /home/gnoduty/.gnoduty/config.yml
+WorkingDirectory=/var/lib/gnoduty/.gnoduty
+ExecStart=/var/lib/gnoduty/go/bin/gnoduty -f /var/lib/gnoduty/.gnoduty/config.yml
 Restart=always
 RestartSec=5
 LimitNOFILE=65535
@@ -103,19 +140,83 @@ WantedBy=multi-user.target
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now gnoduty
-sudo journalctl -u gnoduty -f
 ```
 
-### Optional: HTTPS with Caddy
+The dashboard will be available at `http://YOUR_SERVER_IP:8889`
 
-To serve the dashboard over HTTPS with a domain name, add a reverse proxy in your Caddyfile:
-```
-gnoduty.yourdomain.com {
-    reverse_proxy localhost:8889
-}
+### Service management
+```bash
+# Start
+sudo systemctl start gnoduty
+
+# Stop
+sudo systemctl stop gnoduty
+
+# Restart
+sudo systemctl restart gnoduty
+
+# Status
+sudo systemctl status gnoduty
+
+# Live logs
+sudo journalctl -u gnoduty --no-hostname -f
 ```
 
-## Runtime Options
+---
+
+## Installation — Docker
+
+### Requirements
+
+- Docker and Docker Compose installed
+- Ports 8889 (dashboard) and 28687 (Prometheus) must be open
+
+### Step 1 — Set up the project directory
+```bash
+mkdir gnoduty && cd gnoduty
+git clone https://github.com/AviaOne/gnoduty .
+```
+
+### Step 2 — Create configuration files
+```bash
+cp example-config.yml config.yml
+cp example-docker-compose.yml docker-compose.yml
+```
+
+### Step 3 — Edit config.yml
+
+Edit `config.yml` with your validator address, RPC endpoint, and alert settings (see the "Configure alerts" section above).
+
+### Step 4 — Build and start
+```bash
+docker-compose up -d
+docker-compose logs -f --tail 20
+```
+
+The dashboard will be available at `http://YOUR_SERVER_IP:8889`
+
+### Docker management
+```bash
+# Stop
+docker-compose down
+
+# Restart
+docker-compose restart
+
+# View logs
+docker-compose logs -f --tail 20
+
+# Rebuild after update
+docker-compose up -d --build
+```
+
+---
+
+## Configuration
+
+### Runtime options
+
+GnoDuty accepts command-line flags to override default file paths. This is useful if you want to store configuration or state files in custom locations:
 ```
 $ gnoduty -h
 Usage of gnoduty:
@@ -127,23 +228,7 @@ Usage of gnoduty:
         directory containing additional chain specific configurations (default "chains.d")
 ```
 
-## Directory Structure
-```
-/home/gnoduty/
-├── gnoduty/          # Source code (this repository)
-│   ├── core/         # Go source files
-│   │   ├── static/   # Frontend files (embedded in binary)
-│   │   └── dashboard/
-│   ├── main.go
-│   ├── example-config.yml
-│   └── LICENSE
-├── .gnoduty/         # Runtime configuration
-│   ├── config.yml
-│   ├── .gnoduty-state.json
-│   └── chains.d/
-├── go/bin/gnoduty    # Compiled binary
-└── backups/          # Your backups (not in repo)
-```
+---
 
 ## What Changed from Tenderduty
 
@@ -157,16 +242,24 @@ GnoDuty is a hard fork with significant modifications to support Gno.land's TM2:
 | Validator lookup | ABCI queries | `/validators` RPC endpoint |
 | Signing check | `last_commit.signatures` | `last_commit.precommits` |
 
+**Fork statistics:**
+- **2 new files created** (462 lines) — TM2 polling engine and validator provider, written from scratch
+- **8 files significantly rewritten** (1,894 → 976 lines) — Over 900 lines removed and replaced with TM2-compatible code
+- **20+ files removed** — Cosmos SDK documentation, Docker configs, and assets replaced
+- **Directory restructured** — `td2/` → `core/`, full module path rewrite
+- **~40% of the original codebase was rewritten or removed**
+- **60% unchanged** — Alert system, Prometheus, encryption, and dashboard inherited from Tenderduty
+
 See [CHANGELOG.md](CHANGELOG.md) for a detailed breakdown of every file created, modified, and removed.
 
 ## Credits
 
 - **Original**: [Tenderduty v2](https://github.com/blockpane/tenderduty) by [Todd G (blockpane)](https://github.com/blockpane), sponsored by the [Osmosis Grants Program](https://grants.osmosis.zone/)
-- **Fork**: [GnoDuty](https://github.com/AviaOne/gnoduty) by [AviaOne.com](https://aviaone.com) Adapted for Gno.land TM2
+- **Fork**: [GnoDuty](https://github.com/AviaOne/gnoduty) by [AviaOne.com](https://aviaone.com) — Adapted for Gno.land TM2
 
 ## Disclaimer
 
-The original Tenderduty project was developed [with a $10,000 grant](https://grants.osmosis.zone/grants/tenderduty-v2-validator-monitoring-tool) from the Osmosis Grants Program. 
+The original Tenderduty project was developed [with a $10,000 grant](https://grants.osmosis.zone/grants/tenderduty-v2-validator-monitoring-tool) from the Osmosis Grants Program.
 GnoDuty is currently maintained only by [AviaOne.com](https://aviaone.com) contribution with no funding or sponsorship.
 
 While we strive for quality, we cannot guarantee the same level of support as a funded project. If you encounter bugs, please open an issue on GitHub, we will do our best to address them.
