@@ -31,7 +31,7 @@ GnoDuty solves this by:
 
 ---
 
-## Installation — Linux (Ubuntu/Debian)
+## Installation Linux (Ubuntu/Debian)
 
 ### Requirements
 
@@ -45,19 +45,19 @@ sudo ufw allow 8889/tcp comment "GnoDuty Dashboard"
 sudo ufw allow 28687/tcp comment "GnoDuty Prometheus"
 ```
 
-### Step 1 — Create a dedicated system user
+### Step 1 - Create a dedicated system user
 
 A dedicated system user improves security by isolating GnoDuty from other services. Run this from your regular user account (with sudo access):
 ```bash
 sudo useradd -r -s /bin/false -m -d /var/lib/gnoduty gnoduty
 ```
 
-### Step 2 — Install GnoDuty
+### Step 2 - Install GnoDuty
 ```bash
 sudo -u gnoduty bash -c 'cd ~ && git clone https://github.com/AviaOne/gnoduty && cd gnoduty && go install'
 ```
 
-### Step 3 — Configure
+### Step 3 - Configure
 ```bash
 sudo -u gnoduty mkdir -p /var/lib/gnoduty/.gnoduty
 sudo -u gnoduty cp /var/lib/gnoduty/gnoduty/example-config.yml /var/lib/gnoduty/.gnoduty/config.yml
@@ -89,7 +89,7 @@ curl -s https://rpc.test11.testnets.gno.land/status | python3 -c "import json,sy
 
 See `example-config.yml` for a complete configuration reference with all options.
 
-### Step 4 — Configure alerts
+### Step 4 - Configure alerts
 
 GnoDuty supports alerts via Telegram, Discord, Slack, and PagerDuty when your validator misses blocks, goes offline, or gets jailed.
 
@@ -115,7 +115,7 @@ telegram:
 
 If the per-chain section is missing or `enabled: no`, alerts will NOT be sent for that chain even if the global setting is enabled.
 
-### Step 5 — Create the systemd service
+### Step 5 - Create the systemd service
 
 Create `/etc/systemd/system/gnoduty.service`:
 ```ini
@@ -164,30 +164,30 @@ sudo journalctl -u gnoduty --no-hostname -f
 
 ---
 
-## Installation — Docker
+## Installation Docker
 
 ### Requirements
 
 - Docker and Docker Compose installed
 - Ports 8889 (dashboard) and 28687 (Prometheus) must be open
 
-### Step 1 — Set up the project directory
+### Step 1 - Set up the project directory
 ```bash
 mkdir gnoduty && cd gnoduty
 git clone https://github.com/AviaOne/gnoduty .
 ```
 
-### Step 2 — Create configuration files
+### Step 2 - Create configuration files
 ```bash
 cp example-config.yml config.yml
 cp example-docker-compose.yml docker-compose.yml
 ```
 
-### Step 3 — Edit config.yml
+### Step 3 - Edit config.yml
 
 Edit `config.yml` with your validator address, RPC endpoint, and alert settings (see the "Configure alerts" section above).
 
-### Step 4 — Build and start
+### Step 4 - Build and start
 ```bash
 docker-compose up -d
 docker-compose logs -f --tail 20
@@ -243,19 +243,19 @@ GnoDuty is a hard fork with significant modifications to support Gno.land's TM2:
 | Signing check | `last_commit.signatures` | `last_commit.precommits` |
 
 **Fork statistics:**
-- **2 new files created** (462 lines) — TM2 polling engine and validator provider, written from scratch
-- **8 files significantly rewritten** (1,894 → 976 lines) — Over 900 lines removed and replaced with TM2-compatible code
-- **20+ files removed** — Cosmos SDK documentation, Docker configs, and assets replaced
-- **Directory restructured** — `td2/` → `core/`, full module path rewrite
+- **2 new files created** (462 lines) - TM2 polling engine and validator provider, written from scratch
+- **8 files significantly rewritten** (1,894 → 976 lines) - Over 900 lines removed and replaced with TM2-compatible code
+- **20+ files removed** - Cosmos SDK documentation, Docker configs, and assets replaced
+- **Directory restructured** - `td2/` → `core/`, full module path rewrite
 - **~40% of the original codebase was rewritten or removed**
-- **60% unchanged** — Alert system, Prometheus, encryption, and dashboard inherited from Tenderduty
+- **60% unchanged** - Alert system, Prometheus, encryption, and dashboard inherited from Tenderduty
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed breakdown of every file created, modified, and removed.
 
 ## Credits
 
 - **Original**: [Tenderduty v2](https://github.com/blockpane/tenderduty) by [Todd G (blockpane)](https://github.com/blockpane), sponsored by the [Osmosis Grants Program](https://grants.osmosis.zone/)
-- **Fork**: [GnoDuty](https://github.com/AviaOne/gnoduty) by [AviaOne.com](https://aviaone.com) — Adapted for Gno.land TM2
+- **Fork**: [GnoDuty](https://github.com/AviaOne/gnoduty) by [AviaOne.com](https://aviaone.com) Adapted for Gno.land TM2
 
 ## Disclaimer
 
