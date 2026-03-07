@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: aviaone/gnoduty
 
 jobs:
   build:
@@ -41,5 +41,5 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }},ghcr.io/${{ github.repository }}:latest
+          tags: ${{ steps.meta.outputs.tags }},ghcr.io/aviaone/gnoduty:latest
           labels: ${{ steps.meta.outputs.labels }}
