@@ -255,7 +255,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed breakdown of every file created,
 ## Credits
 
 - **Original**: [Tenderduty v2](https://github.com/blockpane/tenderduty) by [Todd G (blockpane)](https://github.com/blockpane), sponsored by the [Osmosis Grants Program](https://grants.osmosis.zone/)
-- **Fork**: [GnoDuty](https://github.com/AviaOne/gnoduty) by [AviaOne.com](https://aviaone.com) Adapted for Gno.land TM2
+- **Fork**: [GnoDuty](https://github.com/AviaOne/gnoduty) by [AviaOne.com](https://aviaone.com) Adapted for Gno.land TM2.
 
 ## Disclaimer
 
