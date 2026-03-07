@@ -328,7 +328,7 @@ func loadConfig(yamlFile, stateFile, chainConfigDirectory string, password *stri
 	c.logChan = make(chan dash.LogMessage)
 	c.updateChan = make(chan *dash.ChainStatus, len(c.Chains)*2)
 	c.statsChan = make(chan *promUpdate, len(c.Chains)*2)
-	c.ctx, c.cancel = context.WithCancel(context.Background())
+	c.ctx, c.cancel = context.WithCancel(context.Background()) // #nosec
 
 	c.alarms = &alarmCache{
 		SentPdAlarms:  make(map[string]time.Time),

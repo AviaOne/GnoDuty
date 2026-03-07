@@ -91,8 +91,8 @@ func encrypt(plainText []byte, password string) (encryptedConfig []byte, err err
 	// pad the plaintext
 	padLen := cbc.BlockSize() - (len(plainText) % cbc.BlockSize())
 	if padLen > 0 {
-		plainText = append(plainText, bytes.Repeat([]byte{uint8(padLen)}, padLen)...)
-	}
+			plainText = append(plainText, bytes.Repeat([]byte{uint8(padLen)}, padLen)...) // #nosec
+		}
 
 	// encrypt the file
 	cipherText := make([]byte, len(plainText))

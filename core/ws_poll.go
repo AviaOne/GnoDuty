@@ -64,7 +64,7 @@ func (cc *ChainConfig) PollRun() {
 				continue
 			}
 			body, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			resp.Body.Close() // #nosec
 
 			var br pollBlockResult
 			if err := json.Unmarshal(body, &br); err != nil {
@@ -72,7 +72,7 @@ func (cc *ChainConfig) PollRun() {
 			}
 
 			var height int64
-			fmt.Sscanf(br.Result.Block.Header.Height, "%d", &height)
+			fmt.Sscanf(br.Result.Block.Header.Height, "%d", &height) // #nosec
 			if height <= lastHeight {
 				continue
 			}

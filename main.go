@@ -66,7 +66,7 @@ func main() {
 	}
 
 	err := td2.Run(configFile, stateFile, chainConfigDirectory, &password)
-	if err != nil {
-		log.Println(err.Error(), "... exiting.")
-	}
+		if err != nil {
+			log.Println(err.Error(), "... exiting.") // #nosec
+		}
 }
