@@ -13,7 +13,6 @@
 # pointing to localhost:8889. This is done outside of Docker and is
 # independent of this docker-compose configuration.
 
-version: '3.2'
 volumes:
   home:
 services:

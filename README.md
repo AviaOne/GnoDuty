@@ -228,8 +228,23 @@ Usage of gnoduty:
         directory containing additional chain specific configurations (default "chains.d")
 ```
 
----
+### Split Configuration
 
+For validators with many chains, chain-specific configuration may be split into additional files and placed in the `chains.d` directory. This directory can be changed with the `-cc` option.
+
+The user-friendly chain label will be taken from the name of the file:
+- `chains.d/GnoMainnet.yml` → GnoMainnet
+- `chains.d/GnoTestnet.yml` → GnoTestnet
+
+Configuration inside `chains.d/Network.yml` should be the YAML content starting directly with the chain details (without the outer `chains:` label):
+
+```yaml
+chain_id: test11
+valoper_address: g1_YOUR_VALIDATOR_ADDRESS
+nodes:
+  - url: https://rpc.test11.testnets.gno.land:443
+    alert_if_down: yes
+```
 ## What Changed from Tenderduty
 
 GnoDuty is a hard fork with significant modifications to support Gno.land's TM2:
