@@ -59,9 +59,9 @@ type GnoABCIResult struct {
 	Result  *struct {
 		Response struct {
 			ResponseBase struct {
-				Data  string `json:"Data"`
-				Log   string `json:"Log"`
-				Error string `json:"Error"`
+				Data  string          `json:"Data"`
+				Log   string          `json:"Log"`
+				Error json.RawMessage `json:"Error"`
 			} `json:"ResponseBase"`
 		} `json:"response"`
 	} `json:"result"`
@@ -150,6 +150,57 @@ func GnoIsValidatorActive(rpcURL string, address string) (bool, error) {
 // valoPerRex matches fields in the struct returned by GetByAddr
 var valoperMonikerRex = regexp.MustCompile(`\("([^"]*)" string\)`)
 
+// valoperAddrRex matches .uverse.address fields in the struct returned by GetByAddr
+var valoperAddrRex = regexp.MustCompile(`"(g1[a-z0-9]+)" \.uverse\.address`)
+
+// GnoResolveConsensusAddr resolves a valoper account address to its consensus address
+// by querying the valopers realm. The consensus address is the second .uverse.address
+// field in the GetByAddr response (first is the account address itself).
+func GnoResolveConsensusAddr(rpcURL, realmPath, accountAddr string) (string, error) {
+	expr := fmt.Sprintf(`%s.GetByAddr("%s")`, realmPath, accountAddr)
+	dataHex := hex.EncodeToString([]byte(expr))
+
+	qurl := fmt.Sprintf(`%s/abci_query?path=%%22vm/qeval%%22&data=0x%s`,
+		strings.TrimRight(rpcURL, "/"), dataHex)
+
+	body, err := gnoHTTPGet(qurl, 10*time.Second)
+	if err != nil {
+		return "", fmt.Errorf("qeval request failed: %w", err)
+	}
+
+	var result GnoABCIResult
+	if err = json.Unmarshal(body, &result); err != nil {
+		return "", fmt.Errorf("qeval unmarshal failed: %w", err)
+	}
+
+	if result.Error != nil {
+		return "", fmt.Errorf("qeval error: %s", result.Error.Message)
+	}
+
+	if result.Result == nil {
+		return "", errors.New("qeval: nil result")
+	}
+
+	dataB64 := result.Result.Response.ResponseBase.Data
+	if dataB64 == "" {
+		return "", errors.New("qeval: empty response data")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(dataB64)
+	if err != nil {
+		return "", fmt.Errorf("qeval base64 decode failed: %w", err)
+	}
+
+	// Extract all .uverse.address fields
+	// First match = account address, second match = consensus address
+	matches := valoperAddrRex.FindAllStringSubmatch(string(decoded), -1)
+	if len(matches) >= 2 && len(matches[1]) >= 2 {
+		return matches[1][1], nil
+	}
+
+	return "", errors.New("consensus address not found in valopers response")
+}
+
 // GnoGetMoniker resolves a validator address to its moniker using the valopers realm.
 // realmPath is configurable, e.g. "gno.land/r/gnops/valopers"
 func GnoGetMoniker(rpcURL, realmPath, address string) (moniker string, err error) {
@@ -219,21 +270,47 @@ func (cc *ChainConfig) GnoGetValInfo(first bool) error {
 		return errors.New("no RPC URL available")
 	}
 
-	// 1. Check if validator is in the active set
-	bonded, err := GnoIsValidatorActive(rpcURL, cc.ValAddress)
+	realmPath := cc.GnoValopersRealm
+	if realmPath == "" {
+		realmPath = "gno.land/r/gnops/valopers"
+	}
+
+	// 1. Resolve consensus address from valopers realm (once)
+	if cc.gnoConsensusAddr == "" {
+		// First try direct match (valoper_address might already be a consensus address)
+		directMatch, _ := GnoIsValidatorActive(rpcURL, cc.ValAddress)
+		if directMatch {
+			cc.gnoConsensusAddr = cc.ValAddress
+		} else {
+			// Resolve account address → consensus address via valopers realm
+			consAddr, err := GnoResolveConsensusAddr(rpcURL, realmPath, cc.ValAddress)
+			if err != nil {
+				if first {
+					l(fmt.Sprintf("⚠️ could not resolve consensus address for %s: %s", cc.ValAddress, err))
+				}
+			} else {
+				cc.gnoConsensusAddr = consAddr
+				if first {
+					l(fmt.Sprintf("⚙️ resolved %s → consensus %s", cc.ValAddress, consAddr))
+				}
+			}
+		}
+	}
+
+	// 2. Check if validator is in the active set using consensus address
+	lookupAddr := cc.gnoConsensusAddr
+	if lookupAddr == "" {
+		lookupAddr = cc.ValAddress // fallback
+	}
+	bonded, err := GnoIsValidatorActive(rpcURL, lookupAddr)
 	if err != nil {
-		// Not fatal — we can still monitor blocks
 		if first {
-			l(fmt.Sprintf("⚠️ could not check active set for %s: %s", cc.ValAddress, err))
+			l(fmt.Sprintf("⚠️ could not check active set for %s: %s", lookupAddr, err))
 		}
 	}
 	cc.valInfo.Bonded = bonded
 
-	// 2. Resolve moniker via valopers realm
-	realmPath := cc.GnoValopersRealm
-	if realmPath == "" {
-		realmPath = "gno.land/r/gnops/valopers" // default
-	}
+	// 3. Resolve moniker via valopers realm (using account address, not consensus)
 	moniker, err := GnoGetMoniker(rpcURL, realmPath, cc.ValAddress)
 	if err != nil {
 		if first {
@@ -243,23 +320,17 @@ func (cc *ChainConfig) GnoGetValInfo(first bool) error {
 	}
 	cc.valInfo.Moniker = moniker
 
-	// 3. Gno.land has no slashing module — use local counters
-	// Missed and Window are tracked locally via WebSocket block monitoring
-	// Jailed is inferred from absence in /validators
-	cc.valInfo.Jailed = false // will be detected if validator disappears from set
+	// 4. Gno.land has no slashing module
+	cc.valInfo.Jailed = false
 	cc.valInfo.Tombstoned = false
 
-	// 4. Find the hex address for block signature matching
-	// On Gno.land /validators returns bech32 (g1...) addresses
-	// But block signatures use hex addresses. We need to map between them.
-	if len(cc.valInfo.Conspub) == 0 {
+	// 5. Store consensus address for block signature matching
+	if len(cc.valInfo.Conspub) == 0 && cc.gnoConsensusAddr != "" {
 		vals, verr := GnoGetValidators(rpcURL)
 		if verr == nil {
-			addrLower := strings.ToLower(cc.ValAddress)
+			addrLower := strings.ToLower(cc.gnoConsensusAddr)
 			for _, v := range vals {
 				if strings.ToLower(v.Address) == addrLower {
-					// Store the hex address for block signature matching
-					// The address from /validators is what we need
 					cc.valInfo.Conspub = []byte(strings.ToUpper(v.Address))
 					cc.valInfo.Valcons = v.Address
 					break

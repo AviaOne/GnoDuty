@@ -42,7 +42,10 @@ func (cc *ChainConfig) PollRun() {
 		break
 	}
 
-	valAddr := cc.ValAddress
+	valAddr := cc.gnoConsensusAddr
+	if valAddr == "" {
+		valAddr = cc.ValAddress // fallback if not resolved
+	}
 	l(fmt.Sprintf("⚙️ %-12s polling for new blocks from %s", cc.ChainId, cc.gnoRpcEndpoint))
 
 	var lastHeight int64

@@ -66,7 +66,8 @@ type savedState struct {
 type ChainConfig struct {
 	name           string
 	wsclient       *TmConn // custom websocket client
-	gnoRpcEndpoint string  // GnoDuty: stores the working RPC URL
+	gnoRpcEndpoint    string // GnoDuty: stores the working RPC URL
+	gnoConsensusAddr  string // GnoDuty: consensus address resolved from valopers realm
 	noNodes        bool
 	valInfo        *ValInfo
 	lastValInfo    *ValInfo
