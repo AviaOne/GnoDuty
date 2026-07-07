@@ -307,8 +307,10 @@ func (cc *ChainConfig) GnoGetValInfo(first bool) error {
 		if first {
 			l(fmt.Sprintf("⚠️ could not check active set for %s: %s", lookupAddr, err))
 		}
+		// Keep previous bonded state on RPC error
+	} else {
+		cc.valInfo.Bonded = bonded
 	}
-	cc.valInfo.Bonded = bonded
 
 	// 3. Resolve moniker via valopers realm (using account address, not consensus)
 	moniker, err := GnoGetMoniker(rpcURL, realmPath, cc.ValAddress)
